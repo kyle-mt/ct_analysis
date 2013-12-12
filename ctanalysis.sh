@@ -62,6 +62,10 @@ echo "PHP: $(php -v)" | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo "MySQL: $(mysql -V)" | tee -a $reportFile
 echo "" | tee -a $reportFile
+# Current server status
+w | tee -a $reportFile
+echo "Free Memory:" | tee -a $reportFile
+free -M | tee -a $reportFile
 #Disk Usage
 echo -e "${CyanF}${BoldOn}DISK USAGE:${Reset}" | tee -a $reportFile
 df -h
