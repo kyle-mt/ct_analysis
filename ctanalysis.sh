@@ -22,26 +22,32 @@ sqlConnect="mysql -A -t -u admin -p`cat /etc/psa/.psa.shadow` psa -e"
 mysqlBin=$(which mysql)
 mysqlSyntax=$($mysqlbin --help --verbose 2>&1 >/dev/null | grep -i 'error')
 plesk_ver=$(cat /usr/local/psa/version | awk -F '.' '{ print $1$2 }')
-if [ "$plesk_ver" == "115" ]
-     then
+
+if [ "$plesk_ver" == "115" ] ; then
      log_dir="logs"
   else
      log_dir="statistics/logs"
 fi
+
 # cleanup function in case of premature termination
 function finish {
      rm -f ctanalysis.sh
 }
 trap finish EXIT
+
 #See If Otto Directory Exists. If so, move in there, if not, create it
 if [ ! -d "/root/CloudTech" ]; then
     mkdir /root/CloudTech
 fi
+
 #BEGIN MAIN SCRIPT
 clear
-echo -e "${RedF}${BoldOn}Welcome To The Otto Performance Analysis Tool! Boo-ya-kasha!${Reset}"
+echo -ne "${RedF}${BoldOn}Welcome To The CloudTech Advanced ${Reset}"
+echo -ne "${RedF}${BoldOn}Performance Analysis Tool! Boo-ya-kasha!${Reset}"
 echo ""
-echo -n "Enter The Domain Name (or N if you do not want a GTMetrix Report): "
+echo ""
+echo -ne "Enter The Domain Name (or N if you do not want a GTMetrix Report): "
+echo ""
 read domainName
 echo ""
 echo -n "Test Performed on " >> $reportFile
@@ -61,36 +67,75 @@ echo -e "${CyanF}${BoldOn}DISK USAGE:${Reset}" | tee -a $reportFile
 df -h
 echo ""
 #Websites On The Server
-echo "-------------------------------------------------------------" | tee -a $reportFile
+echo "-------------------------------------------------------------" \
+  | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo -e "${CyanF}${BoldOn}LIST OF DOMAINS:${Reset}" | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo -e "${RedF}DOMAINS:${Reset}" | tee -a $reportFile
     echo "" | tee -a $reportFile
-    if [ "$plesk_ver" == "115" ]
-        then
-        $sqlConnect 'select domains.id,domains.name,domains.htype,hosting.www_root,hosting.php_handler_id,sys_users.login,webspace_id from domains join hosting on hosting.dom_id=domains.id join sys_users on sys_users.id=hosting.sys_user_id' | tee -a $reportFile
-       else
-    $sqlConnect 'select domains.id,domains.name,domains.htype,hosting.www_root,hosting.php_handler_type,sys_users.login,webspace_id from domains join hosting on hosting.dom_id=domains.id join sys_users on sys_users.id=hosting.sys_user_id' | tee -a $reportFile
+    if [ "$plesk_ver" == "115" ] ; then
+        $sqlConnect 'select domains.id,
+                            domains.name,
+                            domains.htype,
+                            hosting.www_root,
+                            hosting.php_handler_id,
+                            sys_users.login,
+                            webspace_id, 
+                     from domains 
+                     join hosting on hosting.dom_id=domains.id 
+                     join sys_users on sys_users.id=hosting.sys_user_id' \
+        | tee -a $reportFile
+    else
+        $sqlConnect 'select domains.id,
+                            domains.name,
+                            domains.htype,
+                            hosting.www_root,
+                            hosting.php_handler_type,
+                            sys_users.login,
+                            webspace_id 
+                     from domains 
+                     join hosting on hosting.dom_id=domains.id 
+                     join sys_users on sys_users.id=hosting.sys_user_id' \
+        | tee -a $reportFile
     fi
     echo "" | tee -a $reportFile
     echo -e "${RedF}DOMAIN ALIASES:${Reset}" | tee -a $reportFile
     echo "" | tee -a $reportFile
-    if [ "$plesk_ver" == "115" ]
-        then
-        $sqlConnect 'select domain_aliases.name,domains.name,domain_aliases.status,domain_aliases.dns,domain_aliases.mail,domain_aliases.web,domain_aliases.tomcat from domain_aliases join domains on domain_aliases.dom_id=domains.id' | tee -a $reportFile
-        else
-    $sqlConnect 'select domainaliases.name,domains.name,domainaliases.status,domainaliases.dns,domainaliases.mail,domainaliases.web,domainaliases.tomcat from domainaliases join domains on domainaliases.dom_id=domains.id' | tee -a $reportFile
+    if [ "$plesk_ver" == "115" ] ; then
+        $sqlConnect 'select domain_aliases.name,
+                            domains.name,
+                            domain_aliases.status,
+                            domain_aliases.dns,
+                            domain_aliases.mail,
+                            domain_aliases.web,
+                            domain_aliases.tomcat 
+                     from domain_aliases 
+                     join domains on domain_aliases.dom_id=domains.id' \
+        | tee -a $reportFile
+    else
+        $sqlConnect 'select domainaliases.name,
+                            domains.name,
+                            domainaliases.status,
+                            domainaliases.dns,
+                            domainaliases.mail,
+                            domainaliases.web,
+                            domainaliases.tomcat 
+                     from domainaliases 
+                     join domains on domainaliases.dom_id=domains.id' \
+        | tee -a $reportFile
     fi
     echo "" | tee -a $reportFile
-echo "-------------------------------------------------------------" | tee -a $reportFile
+echo "-------------------------------------------------------------" \
+  | tee -a $reportFile
 echo ""
 #Do MySQL Analysis
 echo -e "${RedF}${BoldOn}Analyzing MySQL...${Reset}" | tee -a $reportFile
 echo "" | tee -a $reportFile
 #mysqltuner
 echo -e "${CyanF}${BoldOn}MySQLTuner Results:${Reset}" | tee -a $reportFile
-echo "-------------------------------------------------------------" | tee -a $reportFile
+echo "-------------------------------------------------------------" \
+  | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo "" | tee -a $reportFile
 wget --quiet --no-check-certificate http://mysqltuner.pl/mysqltuner.pl 
@@ -98,30 +143,40 @@ perl mysqltuner.pl | tee -a $reportFile
 rm -f mysqltuner.pl
 echo "" | tee -a $reportFile
 #mysqlreport
-echo -e "${CyanF}${BoldOn}MySQL Report Results:${Reset}${BoldOff}" | tee -a $reportFile
-echo "-------------------------------------------------------------" | tee -a $reportFile
+echo -e "${CyanF}${BoldOn}MySQL Report Results:${Reset}${BoldOff}" \
+  | tee -a $reportFile
+echo "-------------------------------------------------------------" \
+  | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo "" | tee -a $reportFile
 wget --quiet --no-check-certificate hackmysql.com/scripts/mysqlreport 
 chmod +x mysqlreport
-perl mysqlreport --user admin --password `cat /etc/psa/.psa.shadow` | tee -a /dev/tty $reportFile
+perl mysqlreport --user admin --password `cat /etc/psa/.psa.shadow` \
+  | tee -a /dev/tty $reportFile
 rm -f mysqlreport
 echo "" | tee -a $reportFile
 #Check For Slow Queries
-slowLogFile=$(cat /etc/my.cnf | grep 'log_slow_queries' | awk 'BEGIN { FS = "=" } ; { print $2 }' )
+slowLogFile=$(awk -F= '/log_slow_queries/ {print $2}' /etc/my.cnf)
 if [ "$slowLogFile" == "" ]
   then 
-     echo "-------------------------------------------------------------" | tee -a $reportFile
-     echo "" | tee -a $reportFile
-     echo "Slow Query Logging Is Not Currently Enabled" | tee -a $reportFile
-     echo "-------------------------------------------------------------" | tee -a $reportFile
-     echo "" | tee -a $reportFile
+    echo "-------------------------------------------------------------" \
+      | tee -a $reportFile
+    echo "" | tee -a $reportFile
+    echo "Slow Query Logging Is Not Currently Enabled" | tee -a $reportFile
+    echo "-------------------------------------------------------------" \
+      | tee -a $reportFile
+    echo "" | tee -a $reportFile
 else
-    echo -e "${CyanF}${BoldOn}Printing The Slowest Queries In The Slow Query Log:${Reset}${BoldOff}" | tee -a $reportFile
-    echo "-------------------------------------------------------------" | tee -a $reportFile
-    echo "" | tee -a $reportFile
-    echo "" | tee -a $reportFile
-    mysqldumpslow -r -a /var/log/mysqld.slow.log | tail | tee -a /dev/tty $reportFile
+    echo -ne "${CyanF}${BoldOn}Printing The Slowest Queries " \
+      | tee -a $reportFile
+    echo -ne "${CyanF}${BoldOn}In The Slow Query Log:${Reset}${BoldOff}" \
+      | tee -a $reportFile
+    printf "\n-------------------------------------------------------------" \
+      | tee -a $reportFile
+    printf "\n\n" \
+      | tee -a $reportFile
+    mysqldumpslow -r -a /var/log/mysqld.slow.log | tail \
+      | tee -a /dev/tty $reportFile
 fi
 echo "" | tee -a $reportFile
 echo "" | tee -a $reportFile
@@ -130,7 +185,8 @@ echo -e "${RedF}${BoldOn}Analyzing Apache...${Reset}" | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo -e "${RedF}${BoldOn}CONFIGURATION${Reset}" | tee -a $reportFile
-echo "-------------------------------------------------------------" | tee -a $reportFile
+echo "-------------------------------------------------------------" \
+  | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo -e "${CyanF}${BoldOn}PREFORK SETTINGS:${Reset}" | tee -a $reportFile
@@ -153,138 +209,199 @@ while read i
 echo "" | tee -a $reportFile
 #Check For KeepAlive
 echo -ne "${CyanF}${BoldOn}KeepAlive is " | tee -a $reportFile
-cat /etc/httpd/conf/httpd.conf | egrep '(KeepAlive On|KeepAlive Off)' | awk '{ print $2 }' | tee -a $reportFile
+awk '/^KeepAlive O[nf]/ {print $2}' /etc/httpd/conf/httpd.conf \
+  | tee -a $reportFile
 echo -e "${Reset}" | tee -a $reportFile
 #See Which Apache Modules Are Active
-echo -e "${CyanF}${BoldOn}The Following Apache Modules are Enabled:${Reset}" | tee -a $reportFile
+echo -e "${CyanF}${BoldOn}The Following Apache Modules are Enabled:${Reset}" \
+  | tee -a $reportFile
 apachectl -t -D DUMP_MODULES
 echo ""
 #See Which Modules Are Disabled
-#disabledMods=$(cat /etc/httpd/conf/httpd.conf | grep '#LoadModule' | awk '{ print $2 }')
+#disabledMods=$(cat /etc/httpd/conf/httpd.conf | grep '#LoadModule' \
+#  | awk '{ print $2 }')
 #if [ "$disabledMods" != "" ]
 #   then
-#       echo -e "${CyanF}${BoldOn}The Following Apache Modules are Disabled:${Reset}" | tee -a $reportFile
+#       echo -e "${CyanF}${BoldOn}The Following Apache Modules are " \
+#         | tee -a $reportFile
+#       echo -e "${CyanF}${BoldOn} are Disabled:${Reset}" \
+#         | tee -a $reportFile
 #       echo "" | tee -a $reportFile
 #       echo "$disabledMods" | tee -a $reportFile
 #fi     
 echo "" | tee -a $reportFile
 #Get General Performance Info
 echo -e "${RedF}${BoldOn}PERFORMANCE${Reset}" | tee -a $reportFile
-echo "-------------------------------------------------------------" | tee -a $reportFile
+echo "-------------------------------------------------------------" \
+  | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo "" | tee -a $reportFile
-echo -e "${CyanF}${BoldOn}Current Number Of Connections On Port 80:${Reset}${BoldOff}" | tee -a $reportFile
+echo -e "${CyanF}${BoldOn}Current Number Of Connections On Port " \
+  | tee -a $reportFile
+echo -e "${CyanF}${BoldOn}80:${Reset}${BoldOff}" \
+  | tee -a $reportFile
 echo "" | tee -a $reportFile
 netstat -nt | egrep ':80' | gawk '{print $5}' | wc -l | tee -a $reportFile
 echo "" | tee -a $reportFile
-echo -e "${CyanF}${BoldOn}Here Is The Total Number Of Apache/php-cgi Processes With Average Process Size And Total Memory Usage:${Reset}${BoldOff}" | tee -a $reportFile
+echo -ne "${CyanF}${BoldOn}Here Is The Total Number Of ${Reset}${BoldOff}" \
+  | tee -a $reportFile
+echo -ne "${CyanF}${BoldOn}Apache/php-cgi Processes With ${Reset}${BoldOff}" \
+  | tee -a $reportFile
+echo -ne "${CyanF}${BoldOn}Average Process Size And ${Reset}${BoldOff}" \
+  | tee -a $reportFile
+echo -ne "${CyanF}${BoldOn}Total Memory Usage:${Reset}${BoldOff}" \
+  | tee -a $reportFile
 echo "" | tee -a $reportFile
-ps awwwux | egrep 'httpd|php-cgi' | grep -v grep | awk '{mem = $6; tot = $6 + tot; total++} END{printf("Total procs: %d\nAvg Size: %d KB\nTotal Mem Used: %f GB\n", total, mem / total, tot / 1024 / 1024)}' | tee -a $reportFile
+echo "" | tee -a $reportFile
+ps awwwux | egrep 'http[d]|php-cg[i]' \
+    | awk '{ mem = $6; 
+            tot = $6 + tot; 
+            total++ } 
+            END
+           { printf("
+             Total procs: %d\n
+             Avg Size: %d KB\n
+             Total Mem Used: %f GB\n
+             ", total, mem / total, tot / 1024 / 1024)
+          }' | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo "" | tee -a $reportFile
 #Error Logging
 echo -e "${RedF}${BoldOn}ERRORS${Reset}" | tee -a $reportFile
-echo "-------------------------------------------------------------" | tee -a $reportFile
+echo "-------------------------------------------------------------" \
+  | tee -a $reportFile
 echo "" | tee -a $reportFile
 echo "" | tee -a $reportFile
 #Check For MaxClients Errors
 recentMaxClients=$(grep MaxClients /var/log/httpd/error_log | wc -l)
-logDate=$(stat /var/log/httpd/error_log | grep 'Access' | tail -n1 | awk '{ print $2 }')
+logDate=$(stat /var/log/httpd/error_log | grep 'Access' | tail -n1 \ 
+  | awk '{ print $2 }')
 allMaxClients=$(grep MaxClients /var/log/httpd/error_log* | wc -l)
-echo -e "There were ${CyanF}$allMaxClients${Reset} MaxClients errors in the general Apache logs, ${CyanF}$recentMaxClients${Reset} of which have occurred since $logDate" | tee -a $reportFile
+echo -ne "There were ${CyanF}$allMaxClients${Reset} MaxClients errors " \
+  | tee -a $reportFile
+echo -ne "in the general Apache logs, ${CyanF}$recentMaxClients${Reset} " \
+  | tee -a $reportFile
+echo -ne "of which have occurred since $logDate" \
+  | tee -a $reportFile
+echo "" | tee -a $reportFile
 echo "" | tee -a $reportFile
 #Check general Apache logs
-echo -e "${CyanF}${BoldOn}These Are The Top 10 Errors In The Most Recent General Apache Error Log:${Reset}${BoldOff}" | tee -a $reportFile
+echo -ne "${CyanF}${BoldOn}These Are The Top 10 Errors In The Most Recent " \
+  | tee -a $reportFile
+echo -ne "${CyanF}${BoldOn}General Apache Error Log:${Reset}${BoldOff}" \
+  | tee -a $reportFile
 echo "" | tee -a $reportFile
-egrep 'warn|error' /var/log/httpd/error_log | egrep -v 'BasicConstraints|CommonName|indication|conflict|conjunction' | sed -e "s/\[.*$testYear\]//" | sed -e "s/\[client.*\]//" | sort | uniq -c | sort -nr | head | tee -a $reportFile
+echo "" | tee -a $reportFile
+egrep 'warn|error' /var/log/httpd/error_log \
+  | egrep -v 'BasicConstraints|CommonName|indication|conflict|conjunction' \
+  | sed -e "s/\[.*$testYear\]//" | sed -e "s/\[client.*\]//" | sort \
+  | uniq -c | sort -nr | head | tee -a $reportFile
 echo "" | tee -a $reportFile
 #Check Error Logs For All Domains
-echo -e "${CyanF}${BoldOn}These Are The Top 10 Errors Found In Domain Specific Error Logs:${Reset}${BoldOff}" | tee -a $reportFile
+echo -ne "${CyanF}${BoldOn}These Are The Top 10 Errors Found In Domain " \
+  | tee -a $reportFile
+echo -ne "${CyanF}${BoldOn}Specific Error Logs:${Reset}${BoldOff}" \
+  | tee -a $reportFile
 echo "" | tee -a $reportFile
-for i in $(ls /var/www/vhosts/ | egrep -v '^chroot$|^fs$|^default$|^system$|^fs-passwd$')
+echo "" | tee -a $reportFile
+for i in $(ls /var/www/vhosts/ \
+           | egrep -v '^chroot$|^fs$|^default$|^system$|^fs-passwd$')
   do
   echo "" | tee -a $reportFile
   echo -e "${CyanF}$i${Reset}" | tee -a $reportFile
-  echo "-------------------------------------------------------------" | tee -a $reportFile
-echo "" | tee -a $reportFile
+  echo "-------------------------------------------------------------" \
+    | tee -a $reportFile
+  echo "" | tee -a $reportFile
   echo "" | tee -a $reportFile
   logFile="/var/www/vhosts/$i/$log_dir/error_log"
   logSize=$(ls -la $logFile | awk '{print $5}')
   sizeLimit=104857600
   if [ $sizeLimit -lt $logSize ]
      then
-        echo -n "This Error Log Is Larger Than 100MB. It Might Take a While. Do You Want To Proceed?(y or n): "
+        echo -ne "This Error Log Is Larger Than 100MB. It Might Take a "
+        echo -n "While. Do You Want To Proceed?(y or n): "
         read proceed
-        if [ $proceed == "y" ] || [ $proceed == "Y" ]
-            then
-            egrep 'warn|error' $logFile | egrep -v 'BasicConstraints|CommonName|indication|conflict|conjunction' | sed -e "s/\[.*$testYear\]//" | sed -e "s/\[client.*\]//" | sort | uniq -c | sort -nr | head | tee -a $reportFile
-echo "" | tee -a $reportFile
-       fi
+        if [ $proceed == "y" ] || [ $proceed == "Y" ] ; then
+            egrep 'warn|error' $logFile \
+              | egrep -v 'BasicConstraints|CommonName|indication|conflict|conjunction' \
+              | sed -e "s/\[.*$testYear\]//" | sed -e "s/\[client.*\]//" \
+              | sort | uniq -c | sort -nr | head | tee -a $reportFile
+            echo "" | tee -a $reportFile
+        fi
   else
-  egrep 'warn|error' $logFile | egrep -v 'BasicConstraints|CommonName|indication|conflict|conjunction' | sed -e "s/\[.*$testYear\]//" | sed -e "s/\[client.*\]//" | sort | uniq -c | sort -nr | head | tee -a $reportFile
+  egrep 'warn|error' $logFile \
+    | egrep -v 'BasicConstraints|CommonName|indication|conflict|conjunction' \
+    | sed -e "s/\[.*$testYear\]//" | sed -e "s/\[client.*\]//" | sort \
+    | uniq -c | sort -nr | head | tee -a $reportFile
 echo "" | tee -a $reportFile
 fi
   done
 #See If Apache Was Modified.... Fill In Later
-#Public Facing Results. Requesting API key for webpagetest.org. In the meantime, will use GTMetrix.
+#Public Facing Results. Requesting API key for webpagetest.org. 
+#In the meantime, will use GTMetrix.
 if [ "$domainName" != "n" ] && [ "$domainName" != "N" ] && [ -n "$domainName" ]
 then
 url4Report="http://$domainName"
 echo -e "${RedF}${BoldOn}Generating GTMetrix Report${Reset}" | tee -a $reportFile
 echo "" | tee -a $reportFile
-test=$(curl --silent --user $apiUser:$apiKey --form url=$url4Report --form x-metrix-adblock=0 https://gtmetrix.com/api/0.1/test)
+test=$(curl --silent \
+            --user $apiUser:$apiKey \
+            --form url=$url4Report \
+            --form x-metrix-adblock=0 \
+            https://gtmetrix.com/api/0.1/test)
 testResult=$(echo $test | awk -F '"' '{ print $2 }')
-if [ "$testResult" == "test_id" ]
-   then 
+if [ "$testResult" == "test_id" ] ; then 
     echo "Please Wait, Processing GTMetrix report..." 
-   testID=$(echo $test | awk -F '"' '{print $4 }')
-   reportURL="https://gtmetrix.com/api/0.1/test/$testID"
-   sleep 60
-   fullReport=$(curl --silent --user $apiUser:$apiKey $reportURL)
-   testStatus=$(echo $fullReport | awk -F ':' '{ print $NF }')   
-   if [ "$testStatus" == '"error"}' ]
-     then
-     echo "An Error Occurred With the GTMetrix Report... sorry homes!" | tee -a $reportFile
-   else     
-   echo -e "${CyanF}GTMetrix Results:${Reset}" | tee -a $reportFile
-   echo "" | tee -a $reportFile
-    echo $fullReport | awk -F ',' '{ print $8 "\n" $9  "\n" $10 "\n" $11 "\n" $12 "\n" $13 "\n" $14}' | sed -e 's/"results":{//' | tee -a $reportFile
-    #echo $fullReport | awk -F ',' '{ print $11 }' | tee -a $reportFile
-   fi
-else
+    testID=$(echo $test | awk -F '"' '{print $4 }')
+    reportURL="https://gtmetrix.com/api/0.1/test/$testID"
+    sleep 60
+    fullReport=$(curl --silent --user $apiUser:$apiKey $reportURL)
+    testStatus=$(echo $fullReport | awk -F ':' '{ print $NF }')   
+    if [ "$testStatus" == '"error"}' ] ; then
+      echo "An Error Occurred With the GTMetrix Report... sorry homes!" \
+        | tee -a $reportFile
+    else     
+      echo -e "${CyanF}GTMetrix Results:${Reset}" | tee -a $reportFile
+      echo "" | tee -a $reportFile
+      echo $fullReport \
+        | awk -F ',' '{ print $8 "\n" $9  "\n" $10 "\n" $11 "\n" $12 "\n" $13 "\n" $14}' \
+        | sed -e 's/"results":{//' | tee -a $reportFile
+      #echo $fullReport | awk -F ',' '{ print $11 }' | tee -a $reportFile
+    fi
+  else
     echo "Could Not Perform GTMetrix Report" | tee -a $reportFile
-fi
+  fi
 fi
 ## Check for WordPress Caching
 echo ""
 echo -e "${RedF}${BoldOn}Check for WordPress Caching${Reset}"
 echo ""
-wget --quiet 205.186.160.25/CloudTech/Scripts/cms_performance_checker.sh && sh cms_performance_checker.sh | tee -a $reportFile
+wget --quiet 205.186.160.25/CloudTech/Scripts/cms_performance_checker.sh \ 
+  && sh cms_performance_checker.sh | tee -a $reportFile
 rm -f cms_performance_checker.sh
 #Enable Slow Query Logging
 echo ""
 echo -e "${CyanF}${BoldOn}Enabling Slow Query Logging${Reset}"
 echo ""
-if [ "$slowLogFile" == "" ]
-   then
-       touch /var/log/mysqld.slow.log
-       chown mysql:mysql /var/log/mysqld.slow.log
-       #Add Entry To my.cnf file
-       sed -i '/\[mysqld\]/ a\#Added by (mt)\nlog_slow_queries = /var/log/mysqld.slow.log\nlong_query_time = 1' /etc/my.cnf 
-echo -e "${CyanF}${BoldOn}Restarting MySQL${Reset}"
-echo ""
-        if [ -n "$mysqlSyntax" ]
-            then
-                echo -e "${RedF}${BoldOn}MySQL is not being restarted because of the following errors:${Reset}"
-                echo ""
-                echo $mysqlSyntax
-        else
-        /etc/init.d/mysqld restart
-        fi
+if [ "$slowLogFile" == "" ] ; then
+  touch /var/log/mysqld.slow.log
+  chown mysql:mysql /var/log/mysqld.slow.log
+  #Add Entry To my.cnf file
+  sed -i '/\[mysqld\]/ a\#Added by (mt)\nlog_slow_queries = /var/log/mysqld.slow.log\nlong_query_time = 1' /etc/my.cnf 
+  echo -e "${CyanF}${BoldOn}Restarting MySQL${Reset}"
+  echo ""
+  if [ -n "$mysqlSyntax" ] ; then
+    echo -ne "${RedF}${BoldOn}MySQL is not being restarted because ${Reset}"
+    echo -ne "${RedF}${BoldOn}of the following errors:${Reset}"
+    printf "\n\n"
+    echo $mysqlSyntax
+  else
+    /etc/init.d/mysqld restart
+  fi
 else
-    echo "MySQL Slow Query Logging Is Already Enabled"
-    echo ""
+  echo "MySQL Slow Query Logging Is Already Enabled"
+  echo ""
 fi
 #TESTING CONCLUDED
 echo ""
